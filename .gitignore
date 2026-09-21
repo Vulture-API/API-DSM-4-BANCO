@@ -1,0 +1,143 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Relatórios de diagnóstico (https://nodejs.org/api/report.html)
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# Dados de execução
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Diretório para bibliotecas instrumentadas geradas por jscoverage/JSCover
+lib-cov
+
+# Diretório de cobertura usado por ferramentas como o istanbul
+coverage
+*.lcov
+
+# Cobertura de testes do nyc
+.nyc_output
+
+# Armazenamento intermediário do Grunt (https://gruntjs.com/creating-plugins#storing-task-files)
+.grunt
+
+# Diretório de dependências do Bower (https://bower.io/)
+bower_components
+
+# Configuração do node-waf
+.lock-wscript
+
+# Complementos binários compilados (https://nodejs.org/api/addons.html)
+build/Release
+
+# Diretórios de dependências
+node_modules/
+jspm_packages/
+
+# Diretório de dependências do Snowpack (https://snowpack.dev/)
+web_modules/
+
+# Cache do TypeScript
+*.tsbuildinfo
+
+# Diretório opcional de cache do npm
+.npm
+
+# Cache opcional do ESLint
+.eslintcache
+
+# Cache opcional do Stylelint
+.stylelintcache
+
+# Histórico opcional do REPL
+.node_repl_history
+
+# Saída do comando 'npm pack'
+*.tgz
+
+# Arquivo de integridade do Yarn
+.yarn-integrity
+
+# Arquivos de variáveis de ambiente do dotenv
+.env
+.env.*
+!.env.example
+
+# Cache do parcel-bundler (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# Saída de compilação do Next.js
+.next
+out
+
+# Saída de compilação e geração do Nuxt.js
+.nuxt
+dist
+.output
+
+# Arquivos do Gatsby
+.cache/
+# Remova o comentário da linha public se o projeto usar Gatsby em vez de Next.js
+# https://nextjs.org/blog/next-9-1#public-directory-support
+# public
+
+# Saída de compilação do VuePress
+.vuepress/dist
+
+# Diretório temporário do VuePress v2.x
+.temp
+
+# Diretório de cache do SvelteKit
+.svelte-kit/
+
+# Saída de compilação do VitePress
+**/.vitepress/dist
+
+# Diretório de cache do VitePress
+**/.vitepress/cache
+
+# Cache e arquivos gerados pelo Docusaurus
+.docusaurus
+
+# Diretórios do Serverless
+.serverless/
+
+# Cache do FuseBox
+.fusebox/
+
+# Arquivos do DynamoDB Local
+.dynamodb/
+
+# Diretório de cache do Firebase
+.firebase/
+
+# Arquivo de porta do TernJS
+.tern-port
+
+# Armazena versões do VSCode usadas para testar extensões do VSCode
+.vscode-test
+
+# pnpm
+.pnpm-store
+
+# yarn v3
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+# Arquivos do Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+.vite/
