@@ -25,12 +25,22 @@ LEFT JOIN pg_inherits i ON i.inhrelid = c.oid
 LEFT JOIN pg_class p ON p.oid = i.inhparent AND p.relname = 'readings'
 WHERE p.oid IS NOT NULL;
 
+-- Sensor medido nas consultas 1 e 4: o primeiro sensor de benchmark criado pelo
+-- seed_readings.sql. Não assume id = 1 — num banco que já tinha sensores (o seed
+-- é idempotente), o id 1 pode ser outro sensor e a consulta mediria 0 linhas.
+SELECT s.id AS bench_sensor_id
+FROM sensors s JOIN stations st ON st.id = s.station_id
+WHERE st.mac_address = 'BE:0C:00:00:00:00'
+ORDER BY s.id
+LIMIT 1 \gset
+\echo 'Sensor medido:' :bench_sensor_id
+
 \echo ''
 \echo '===== 1. Histórico de um sensor no último mês (consulta do gráfico) ====='
 EXPLAIN (ANALYZE, BUFFERS, COSTS OFF)
 SELECT id, value, unix_time
 FROM readings
-WHERE sensor_id = 1
+WHERE sensor_id = :bench_sensor_id
   AND unix_time >= extract(epoch FROM now() - interval '30 days')::bigint
   AND unix_time <  extract(epoch FROM now())::bigint
 ORDER BY unix_time DESC
@@ -61,7 +71,7 @@ SELECT
   max(value) AS maxima,
   min(value) AS minima
 FROM readings
-WHERE sensor_id = 1
+WHERE sensor_id = :bench_sensor_id
   AND unix_time >= extract(epoch FROM now() - interval '7 days')::bigint
 GROUP BY 1
 ORDER BY 1 DESC;

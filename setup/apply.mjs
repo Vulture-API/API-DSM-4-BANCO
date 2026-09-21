@@ -77,8 +77,10 @@ try {
     for (const p of props.rows) console.log(`  ${p.id} - ${p.name}`);
   }
 } catch (error) {
-  console.error("\nFALHOU:", error.message);
-  if (error.message.includes("getaddrinfo") || error.message.includes("ENOTFOUND")) {
+  // `throw` em JS aceita qualquer valor (string, null...): não assumir .message.
+  const mensagem = error instanceof Error ? error.message : String(error);
+  console.error("\nFALHOU:", mensagem);
+  if (mensagem.includes("getaddrinfo") || mensagem.includes("ENOTFOUND")) {
     console.error("Verifique a URL e se você tem acesso à internet.");
   }
   process.exit(1);
