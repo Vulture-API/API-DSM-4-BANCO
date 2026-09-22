@@ -1,0 +1,13 @@
+# Normaliza fim de linha: o repositório guarda sempre LF, independente de o
+# dev estar no Windows ou no Linux. Sem isso, um arquivo salvo no Windows
+# aparece no PR com todas as linhas alteradas.
+* text=auto eol=lf
+
+# Binários não devem ser normalizados.
+*.png binary
+*.jpg binary
+*.ico binary
+*.pdf binary
+
+# Lockfile fora do diff do code review.
+package-lock.json linguist-generated=true -diff
