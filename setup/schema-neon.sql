@@ -169,6 +169,12 @@ ON CONFLICT (key) DO NOTHING;
 CREATE UNIQUE INDEX IF NOT EXISTS uq_triggered_alerts_reading_config
   ON triggered_alerts (reading_id, alert_config_id);
 
+-- No máximo um alerta pendente por regra: o motor não dispara de novo enquanto
+-- o anterior não for reconhecido (vale também com várias instâncias do motor).
+-- Também atende a consulta "esta regra tem pendente?" (migrations/014).
+CREATE UNIQUE INDEX IF NOT EXISTS uq_triggered_alerts_pending_per_config
+  ON triggered_alerts (alert_config_id) WHERE acknowledged_at IS NULL;
+
 -- Consulta executada a cada ciclo do motor.
 CREATE INDEX IF NOT EXISTS idx_alert_configs_sensor_active
   ON alert_configs (sensor_id) WHERE active = true;
