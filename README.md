@@ -13,10 +13,13 @@ setup/
   apply.mjs                              # aplica os SQL sem precisar de psql
   schema-neon.sql                        # schema completo, idempotente
   seed-dev.sql                           # dados mínimos de desenvolvimento
+  seed-demo.sql                          # dados de demonstração (NÃO rodar no Neon compartilhado)
 migrations/
   010_readings_partitioning.sql          # particionamento mensal de readings
   011_readings_indexes_and_tuning.sql    # índices, autovacuum, fillfactor, MV
   012_partition_maintenance.sql          # criação e expurgo automático de partições
+  013_restore_column_defaults.sql        # restaura os DEFAULT das colunas no Neon
+  014_one_pending_alert_per_rule.sql     # no máximo 1 alerta pendente por regra (fecha duplicados)
 benchmark/
   seed_readings.sql                      # massa sintética
   benchmark.sql                          # bateria de consultas com EXPLAIN ANALYZE
