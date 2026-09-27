@@ -1,0 +1,13 @@
+# Postgres local para o benchmark da SCRUM-379.
+#
+# A imagem oficial não traz pg_partman, e a migration 010 depende dele.
+# O repositório PGDG já vem configurado na imagem oficial, então basta instalar.
+#
+#   docker build -t bench-postgres -f benchmark/Dockerfile.postgres benchmark/
+#   docker run -d --name bench-postgres -e POSTGRES_PASSWORD=postgres \
+#     -p 5432:5432 bench-postgres
+FROM postgres:16
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends postgresql-16-partman \
+  && rm -rf /var/lib/apt/lists/*

@@ -1,0 +1,96 @@
+# ---------------------------------------------------------------------------
+# SCRUM-377 — Pipeline de Integração Contínua do banco (Equipe Vulture)
+#
+# Sobe um PostgreSQL 16 descartável com pg_partman e valida, a cada PR:
+#   schema + seed (idempotentes) -> migrations 010..013 -> checklist de aceite
+#   -> benchmark reduzido. Nada aqui toca o Neon.
+# ---------------------------------------------------------------------------
+name: CI
+
+on:
+  pull_request:
+    branches: [dev, main]
+  push:
+    branches: [dev, main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: "24"
+  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+
+jobs:
+  migrations:
+    name: Validar schema e migrations
+    # Fixado em 24.04: é onde existe o pacote postgresql-16-partman.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Subir PostgreSQL 16 com pg_partman
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q postgresql-16 postgresql-16-partman
+          sudo pg_ctlcluster 16 main start || sudo systemctl start postgresql
+          sudo -u postgres psql -qc "ALTER USER postgres PASSWORD 'postgres';"
+          psql "$DATABASE_URL" -tAc "SELECT version();"
+
+      - name: Instalar dependências (clean room)
+        run: npm ci
+
+      - name: Schema + seed (e de novo, para provar idempotência)
+        run: |
+          node setup/apply.mjs "$DATABASE_URL"
+          node setup/apply.mjs "$DATABASE_URL"
+
+      - name: Benchmark reduzido (aplica as migrations 010..012)
+        env:
+          ROWS: "100000"
+        run: bash benchmark/run.sh "$DATABASE_URL"
+
+      - name: Migration 013 (duas vezes)
+        run: |
+          psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f migrations/013_restore_column_defaults.sql
+          psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f migrations/013_restore_column_defaults.sql
+
+      - name: Checklist de aceite
+        run: |
+          q() { psql "$DATABASE_URL" -tAc "$1"; }
+          falha() { echo "::error::$1"; exit 1; }
+
+          [ "$(q 'SELECT count(*) FROM readings_default')" = 0 ] || falha "Há leituras na partição DEFAULT."
+          PARTICOES=$(q "SELECT count(*) FROM pg_inherits i JOIN pg_class p ON p.oid = i.inhparent JOIN pg_class c ON c.oid = i.inhrelid WHERE p.relname = 'readings' AND c.relname <> 'readings_default'")
+          [ "$PARTICOES" -ge 12 ] || falha "Esperava 12+ partições mensais, achei $PARTICOES."
+          MV=$(q 'SELECT count(*) FROM mv_latest_readings'); SENS=$(q 'SELECT count(DISTINCT sensor_id) FROM readings')
+          [ "$MV" = "$SENS" ] || falha "mv_latest_readings tem $MV linhas para $SENS sensores."
+          psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -c "CALL partman.run_maintenance_proc();" -c "CALL partman.run_maintenance_proc();"
+          [ "$(q 'SELECT assert_readings_default_empty()')" = 0 ] || falha "Alarme da partição DEFAULT disparou."
+          q "INSERT INTO readings (sensor_id, value, unix_time) SELECT min(id), 1, extract(epoch FROM now())::bigint FROM sensors RETURNING created_at IS NOT NULL" | grep -qx t || falha "INSERT sem created_at falhou (DEFAULT ausente)."
+
+          echo "::notice::Checklist ok: $PARTICOES partições, $MV sensores na materialized view, DEFAULT vazia."
+
+      - name: Resumo do benchmark
+        if: always()
+        run: |
+          {
+            echo "### Benchmark (ROWS=100000)"
+            echo '```'
+            grep -hE "=====|Execution Time" benchmark/resultado-antes.txt | sed 's/^/ANTES  /' || true
+            grep -hE "=====|Execution Time" benchmark/resultado-depois.txt | sed 's/^/DEPOIS /' || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
