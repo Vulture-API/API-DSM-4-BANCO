@@ -6,9 +6,16 @@
 -- sem brigar com registros que outro membro do time já tenha criado.
 
 -- Cargo e usuário de desenvolvimento -----------------------------------------
-INSERT INTO roles (name, description)
-SELECT 'Administrador', 'Acesso total à plataforma'
-WHERE NOT EXISTS (SELECT 1 FROM roles WHERE name = 'Administrador');
+-- Somente o administrador recém-criado recebe concessões; seeds repetidos
+-- não restauram permissões que o time tenha removido.
+WITH inserted AS (
+  INSERT INTO roles (name, description)
+  VALUES ('Administrador', 'Acesso total à plataforma')
+  ON CONFLICT (name) DO NOTHING
+  RETURNING id
+)
+INSERT INTO role_permissions (role_id, permission_code)
+SELECT i.id, p.code FROM inserted i CROSS JOIN permissions p;
 
 INSERT INTO users (role_id, name)
 SELECT (SELECT id FROM roles WHERE name = 'Administrador'), 'Usuário de Desenvolvimento'

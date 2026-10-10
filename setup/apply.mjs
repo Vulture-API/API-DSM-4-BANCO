@@ -1,7 +1,7 @@
 // Aplica os scripts SQL no banco, sem depender do psql instalado.
 //
-//   npm run db:setup          -> schema + seed
-//   npm run db:schema         -> só o schema
+//   npm run db:setup          -> schema + permissões + seed
+//   npm run db:schema         -> schema + permissões
 //   npm run db:seed           -> só o seed
 //
 // A URL vem de DATABASE_URL (.env deste diretório) ou do primeiro argumento.
@@ -36,8 +36,9 @@ if (!url) {
 
 const files = [
   { nome: "schema", caminho: join(here, "schema-neon.sql") },
+  { nome: "permissions", caminho: join(here, "../migrations/015_role_permissions.sql") },
   { nome: "seed", caminho: join(here, "seed-dev.sql") },
-].filter((f) => !only || f.nome === only);
+].filter((f) => !only || f.nome === only || (only === "schema" && f.nome === "permissions"));
 
 const client = new pg.Client({
   connectionString: url,
