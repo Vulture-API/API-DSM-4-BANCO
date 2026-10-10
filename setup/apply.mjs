@@ -1,7 +1,7 @@
 // Aplica os scripts SQL no banco, sem depender do psql instalado.
 //
-//   npm run db:setup          -> schema + seed
-//   npm run db:schema         -> só o schema
+//   npm run db:setup          -> schema + permissões + seed
+//   npm run db:schema         -> schema + permissões
 //   npm run db:seed           -> só o seed
 //
 // A URL vem de DATABASE_URL (.env deste diretório) ou do primeiro argumento.
