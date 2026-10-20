@@ -11,7 +11,7 @@ on:
   pull_request:
     branches: [dev, main]
   push:
-    branches: [dev, main]
+    branches: [dev, main, 'SCRUM-*']
   workflow_dispatch:
 
 concurrency:
@@ -67,6 +67,16 @@ jobs:
         run: |
           psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f migrations/013_restore_column_defaults.sql
           psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f migrations/013_restore_column_defaults.sql
+
+      - name: Validar precisão, limites e permissões sem skips
+        env:
+          TEST_DATABASE_URL: ${{ env.DATABASE_URL }}
+        run: |
+          set -o pipefail
+          node --test --test-reporter=tap | tee /tmp/banco-tests.tap
+          grep -Eq '^# skipped 0$' /tmp/banco-tests.tap
+          psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f migrations/016_sensor_limits_and_reading_precision.sql
+          psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f migrations/016_sensor_limits_and_reading_precision.sql
 
       - name: Checklist de aceite
         run: |

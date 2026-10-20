@@ -94,3 +94,47 @@ TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5433/agritech_test np
 ```
 
 O teste cria um schema com UUID e o remove no final. Use conexão direta com permissão de criação de schemas. Em 2026-10-10, a validação passou com PostgreSQL de desenvolvimento e a migration foi aplicada: 31 concessões para Administrador, zero para os demais perfis existentes. A proteção das APIs anteriores depende de `ACCESS_CONTROL_ENABLED=true` no backend; as novas APIs de permissões sempre exigem JWT e autorização. A configuração de autenticação e o contrato HTTP estão em `docs/permissoes.md` do BACKEND.
+
+## SCRUM-448 — limites e precisão da telemetria
+
+O setup/schema incorpora `sensors.min_value` e `sensors.max_value` como NUMERIC
+opcionais, sem limites presumidos. A constraint `sensors_limits_valid` impede
+limites não finitos e mínimo maior que máximo. Igualdade é válida. A migration
+`016_sensor_limits_and_reading_precision.sql` amplia `readings.value` para NUMERIC
+sem escala fixa e adapta limites numéricos adicionados manualmente. O setup aplica
+schema → permissões 015 → telemetria 016 → seed. `npm run db:schema` também aplica
+015/016; `db:seed` continua executando somente o seed.
+
+Para banco existente, a 016 exige **janela de manutenção**, writers e refreshes
+parados, backup e permissões de proprietário dos objetos afetados. Ela toma locks
+com `lock_timeout=10s` e executa em uma transação; qualquer erro reverte a operação.
+Testar antes em cópia descartável. Não executar as migrations 010–012 apenas para
+ampliar precisão; elas pertencem ao trabalho de particionamento e movimentam dados.
+
+A 016 pode ser reaplicada. Preserva leituras, FKs, índices e nulabilidade. No banco
+particionado, altera o pai e seus descendentes; também altera o template registrado
+no pg_partman para impedir que partições futuras voltem a duas casas decimais.
+A criação da tabela na 010 foi alinhada ao tipo NUMERIC para novas instalações.
+
+Quando presente, `mv_latest_readings` é recriada dentro da transação com a definição
+original, estado populado/não populado, índices, proprietário, permissões de tabela
+e coluna, comentários, opções e tablespace. Não usa CASCADE. Dependências não
+previstas ou tipos incompatíveis abortam a migration; revisar o erro antes de
+qualquer reaplicação. Depois, conferir dados, tipos das partições/template e
+`REFRESH MATERIALIZED VIEW CONCURRENTLY mv_latest_readings`.
+
+NUMERIC sem escala fixa preserva os decimais recebidos até os limites PostgreSQL
+(131072 dígitos integrais e 16383 fracionários). Valores históricos já arredondados
+não são recuperáveis. O tratamento independente da SCRUM-448 usa Decimal e valida
+essa representabilidade. As APIs existentes continuam retornando números via
+float8/JavaScript, com limitações de precisão e de amplitude; seu contrato não muda.
+
+Testes descartáveis:
+
+```bash
+TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/test node --test
+```
+
+O CI usa PostgreSQL 16 com pg_partman, integrações obrigatórias sem skips, setup
+repetido, permissões, migrations de particionamento, 016 repetida e benchmark
+reduzido. Nada aplica alterações em Neon ou outro banco externo automaticamente.
