@@ -37,8 +37,9 @@ if (!url) {
 const files = [
   { nome: "schema", caminho: join(here, "schema-neon.sql") },
   { nome: "permissions", caminho: join(here, "../migrations/015_role_permissions.sql") },
+  { nome: "telemetry", caminho: join(here, "../migrations/016_sensor_limits_and_reading_precision.sql") },
   { nome: "seed", caminho: join(here, "seed-dev.sql") },
-].filter((f) => !only || f.nome === only || (only === "schema" && f.nome === "permissions"));
+].filter((f) => !only || f.nome === only || (only === "schema" && ["permissions", "telemetry"].includes(f.nome)));
 
 const client = new pg.Client({
   connectionString: url,

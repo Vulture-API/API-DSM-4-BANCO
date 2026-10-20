@@ -59,3 +59,11 @@ docker run -d --name bench-postgres -e POSTGRES_PASSWORD=postgres -p 5440:5432 p
 ```
 
 Para aplicar em produção, siga o passo a passo da seção 5 de [`docs/otimizacoes.md`](docs/otimizacoes.md). **É uma migração com movimentação de dados — exige janela de manutenção e backup.**
+
+### Telemetria e precisão (SCRUM-448)
+
+A migration 016 adiciona limites opcionais nos sensores e amplia as leituras para
+NUMERIC sem escala fixa. Instruções, testes, manutenção e limitações das APIs em
+[setup/README.md](setup/README.md#scrum-448--limites-e-precisão-da-telemetria).
+A alteração preserva precisão no banco; não recupera histórico arredondado nem
+altera o contrato HTTP do BACKEND.
