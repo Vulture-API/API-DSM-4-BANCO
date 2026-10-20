@@ -20,6 +20,8 @@ migrations/
   012_partition_maintenance.sql          # criação e expurgo automático de partições
   013_restore_column_defaults.sql        # restaura os DEFAULT das colunas no Neon
   014_one_pending_alert_per_rule.sql     # no máximo 1 alerta pendente por regra (fecha duplicados)
+  015_role_permissions.sql               # catálogo e associações de permissões (SCRUM-432)
+  016_occurrences.sql                    # ocorrências de falhas e limites dos sensores (SCRUM-395)
 benchmark/
   seed_readings.sql                      # massa sintética
   benchmark.sql                          # bateria de consultas com EXPLAIN ANALYZE

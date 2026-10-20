@@ -1,6 +1,6 @@
 # Setup do banco no Neon
 
-Cria o schema utilizado pelo backend, incluindo o catálogo e as associações de permissões da SCRUM-432. Não precisa ter `psql` instalado — o script usa o driver `pg` do Node.
+Cria o schema utilizado pelo backend, incluindo o catálogo e as associações de permissões da SCRUM-432 e as ocorrências de falhas da SCRUM-395 (migration 016). Não precisa ter `psql` instalado — o script usa o driver `pg` do Node.
 
 ## Uma vez só
 
@@ -24,9 +24,10 @@ Conectado em "neondb".
 
 Aplicando schema... ok
 Aplicando permissions... ok
+Aplicando occurrences... ok
 Aplicando seed... ok
 
-13 tabelas no schema public.
+14 tabelas no schema public.
 2 propriedade(s), 5 tipo(s) de sensor.
 
 Use um destes property_id ao criar estações:
@@ -41,7 +42,7 @@ Anote os `property_id` — você precisa deles para criar estações pela API.
 ### Variações
 
 ```bash
-npm run db:schema    # tabelas e migration 015 de permissões
+npm run db:schema    # tabelas e migrations 015 (permissões) e 016 (ocorrências)
 npm run db:seed      # só os dados de desenvolvimento
 
 # Apontar para outro banco, sem mexer no .env:
