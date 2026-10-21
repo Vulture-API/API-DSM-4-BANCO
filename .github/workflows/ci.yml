@@ -11,7 +11,7 @@ on:
   pull_request:
     branches: [dev, main]
   push:
-    branches: [dev, main, 'SCRUM-*']
+    branches: [dev, main, 'SCRUM-*', 'feature/SCRUM-*']
   workflow_dispatch:
 
 concurrency:
@@ -77,6 +77,8 @@ jobs:
           grep -Eq '^# skipped 0$' /tmp/banco-tests.tap
           psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f migrations/016_sensor_limits_and_reading_precision.sql
           psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f migrations/016_sensor_limits_and_reading_precision.sql
+          psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f migrations/017_telemetry_destinations_and_idempotency.sql
+          psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f migrations/017_telemetry_destinations_and_idempotency.sql
 
       - name: Checklist de aceite
         run: |

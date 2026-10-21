@@ -139,3 +139,53 @@ TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/test node --test
 O CI usa PostgreSQL 16 com pg_partman, integrações obrigatórias sem skips, setup
 repetido, permissões, migrations de particionamento, 016 repetida e benchmark
 reduzido. Nada aplica alterações em Neon ou outro banco externo automaticamente.
+
+## SCRUM-451 — destinos e idempotência da telemetria
+
+O setup agora aplica schema → 015 → **016_occurrences** →
+**016_sensor_limits_and_reading_precision** → **017** → seed. Os dois arquivos 016
+são históricos e devem ser aplicados explicitamente; não foram renumerados.
+`db:schema` também aplica a 017; `db:seed` continua executando somente o seed.
+
+A `017_telemetry_destinations_and_idempotency.sql` é transacional/reaplicável:
+
+- Cria unicidade de readings(sensor_id,unix_time), incluindo o pai particionado.
+  Antes, bloqueia writers e detecta duplicatas históricas com diagnóstico.
+  Não apaga nem consolida linhas. Corrigir essas duplicatas exige decisão explícita
+  antes de reaplicar; uma falha reverte toda a migration.
+- Amplia occurrences.value para NUMERIC sem escala fixa, mantendo índices,
+  nulabilidade, proprietário e grants. Dependências incompatíveis abortam sem
+  CASCADE. Valores históricos arredondados não podem ser reconstruídos.
+- Cria telemetry_events, telemetry_results e telemetry_quarantine. A origem é
+  única por source_id + Stream + ID Redis. original_fields é BYTEA contendo JSON
+  ASCII-escaped dos **campos string originais**, preservando inclusive JSON
+  inválido, tokens numéricos extremos, NUL e surrogates. O payload não é convertido
+  em JSONB. Quarentena associa o evento, ordinal/motivos, estado OPEN e data;
+  tópico, received_at e payload são recuperados pela origem.
+- Resultados conservam destino e referências (reading_id,reading_unix_time),
+  sensor, limites e motivos. Ordinal zero representa rejeição do evento inteiro.
+  Referências de auditoria a leituras/sensores são snapshots; sobrevivem a remoção
+  posterior de cadastros. Readings preserva sua FK de sensor. Não é criada uma FK
+  para readings(id), incompatível com sua PK composta quando particionada.
+- Quarentena/resultados impedem excluir a origem referenciada. Não há retenção,
+  expurgo ou interface de replay nesta migration; operação pertence à SCRUM-530.
+
+Aplicar somente com backup, janela de manutenção e writers parados. lock_timeout
+é 10 segundos. Use proprietário do schema para aplicar; conceda ao usuário do
+tratamento SELECT dos cadastros, INSERT/SELECT/UPDATE nos eventos, INSERT/SELECT
+nos destinos/leituras/ocorrências, UPDATE de comunicação e USAGE nas sequences
+necessárias, conforme o gerenciamento de usuários do ambiente. Nenhum grant para
+PUBLIC ou alteração de papéis externos é executado pela 017.
+
+A criação de leituras particionadas na 010 mantém a unicidade, renomeando o índice
+arquivado antes de criar o novo pai. Não reaplicar 010 em instalação já particionada.
+O benchmark faz rollback da amostra de INSERT para não gerar colisões entre as
+execuções antes/depois. CI aplica a 017 também depois do particionamento e testa
+migrations repetidas, MV, precisão, quarentena, constraints e rollback sem skips.
+
+No tratamento, SOURCE_ID deve ser estável durante reinícios/replay. Para o mesmo
+sensor/instante, valor igual é duplicata; diferente gera conflicting_measurement em
+quarentena, sem sobrescrever a primeira leitura. ACK exige commit de todos os
+destinos. A persistência usa Decimal/NUMERIC; APIs float8/JavaScript continuam com
+a limitação documentada na SCRUM-448, inclusive para valores extremos. Ativação
+operacional depende da SCRUM-531; nenhum banco externo é alterado por esta entrega.

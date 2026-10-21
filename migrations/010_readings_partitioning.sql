@@ -71,6 +71,7 @@ ALTER TABLE readings_old RENAME CONSTRAINT readings_pk TO readings_old_pk;
 ALTER TABLE readings_old RENAME CONSTRAINT readings_sensor_fk TO readings_old_sensor_fk;
 ALTER INDEX IF EXISTS idx_readings_sensor_time RENAME TO idx_readings_old_sensor_time;
 ALTER INDEX IF EXISTS idx_readings_time RENAME TO idx_readings_old_time;
+ALTER INDEX IF EXISTS uq_readings_sensor_unix_time RENAME TO uq_readings_old_sensor_unix_time;
 
 -- RENAME TO da tabela NÃO renomeia a sequence da coluna IDENTITY. Sem esta
 -- linha, `readings_id_seq` continua pertencendo à readings_old e o Postgres
@@ -98,6 +99,8 @@ CREATE TABLE readings (
 -- Índice declarado no pai: o Postgres propaga sozinho para toda partição nova,
 -- inclusive as que o pg_partman criar daqui pra frente.
 CREATE INDEX idx_readings_sensor_time ON readings (sensor_id, unix_time DESC);
+-- SCRUM-451: maintain database-enforced deduplication after partitioning.
+CREATE UNIQUE INDEX uq_readings_sensor_unix_time ON readings(sensor_id, unix_time);
 
 -- 4. Template de storage parameters ------------------------------------------
 
