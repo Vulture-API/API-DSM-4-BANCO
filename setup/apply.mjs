@@ -38,9 +38,10 @@ const files = [
   { nome: "schema", caminho: join(here, "schema-neon.sql") },
   { nome: "permissions", caminho: join(here, "../migrations/015_role_permissions.sql") },
   { nome: "occurrences", caminho: join(here, "../migrations/016_occurrences.sql") },
-  { nome: "seed", caminho: join(here, "seed-dev.sql") },
   { nome: "telemetry", caminho: join(here, "../migrations/016_sensor_limits_and_reading_precision.sql") },
-].filter((f) => !only || f.nome === only || (only === "schema" && ["permissions", "telemetry", "occurrences"].includes(f.nome)));
+  { nome: "destinations", caminho: join(here, "../migrations/017_telemetry_destinations_and_idempotency.sql") },
+  { nome: "seed", caminho: join(here, "seed-dev.sql") },
+].filter((f) => !only || f.nome === only || (only === "schema" && ["permissions", "telemetry", "occurrences", "destinations"].includes(f.nome)));
 
 const client = new pg.Client({
   connectionString: url,
