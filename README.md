@@ -69,3 +69,12 @@ NUMERIC sem escala fixa. Instruções, testes, manutenção e limitações das A
 [setup/README.md](setup/README.md#scrum-448--limites-e-precisão-da-telemetria).
 A alteração preserva precisão no banco; não recupera histórico arredondado nem
 altera o contrato HTTP do BACKEND.
+
+### Recuperação e replay (SCRUM-530)
+
+A migration 018 acrescenta auditoria de solicitações/tentativas/resultados de
+replay e incidentes de conteúdo ausente no Stream. Preserva origens/rejeições,
+protege campos já aceitos e registra o corte legado para novos eventos.
+Setup aplica 018 antes do seed. Contrato, permissões e operação em
+[setup/README.md](setup/README.md#scrum-530--auditoria-de-recuperação-e-replay).
+A execução permanece optativa no tratamento; implantação continua na SCRUM-531.
