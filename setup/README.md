@@ -143,9 +143,9 @@ reduzido. Nada aplica alterações em Neon ou outro banco externo automaticament
 ## SCRUM-451 — destinos e idempotência da telemetria
 
 O setup agora aplica schema → 015 → **016_occurrences** →
-**016_sensor_limits_and_reading_precision** → **017** → seed. Os dois arquivos 016
+**016_sensor_limits_and_reading_precision** → **017** → **018** → seed. Os dois arquivos 016
 são históricos e devem ser aplicados explicitamente; não foram renumerados.
-`db:schema` também aplica a 017; `db:seed` continua executando somente o seed.
+`db:schema` também aplica 017 e 018; `db:seed` continua executando somente o seed.
 
 A `017_telemetry_destinations_and_idempotency.sql` é transacional/reaplicável:
 
@@ -189,3 +189,43 @@ quarentena, sem sobrescrever a primeira leitura. ACK exige commit de todos os
 destinos. A persistência usa Decimal/NUMERIC; APIs float8/JavaScript continuam com
 a limitação documentada na SCRUM-448, inclusive para valores extremos. Ativação
 operacional depende da SCRUM-531; nenhum banco externo é alterado por esta entrega.
+
+
+## SCRUM-530 — auditoria de recuperação e replay
+
+A migration transacional/reaplicável `018_telemetry_recovery_and_replay.sql` sucede
+017 e preserva os dois arquivos 016. Setup e db:schema a aplicam antes do seed;
+o runtime valida sua existência, sem executar migrations. Aplicar com o proprietário
+do schema, backup/janela do ambiente e writers parados. Esta entrega só a testa
+em PostgreSQL descartável; nenhuma aplicação externa ou ativação está incluída.
+
+- `telemetry_events.legacy_max_id` conserva o corte usado para novos eventos.
+  Históricos ficam NULL; timestamp já efetivado pode ser reutilizado, mas corte
+  perdido não é inferido em replay de evento rejeitado antes dessa etapa.
+- `telemetry_replay_requests` identifica solicitação UUID, quarentena original,
+  operador, justificativa e criação; parâmetros do UUID são imutáveis no serviço.
+- `telemetry_replay_attempts` guarda versão do pacote, estados RUNNING/SUCCEEDED/
+  PARTIAL/REJECTED/TECHNICAL_FAILURE/INTERRUPTED, erro técnico por classe e tempos.
+  Solicitação/tentativa são commitadas antes dos efeitos; falha deixa histórico.
+- `telemetry_replay_results` registra resultados por tentativa e ordinal, referências
+  snapshot da leitura/sensor, timestamp, limites e motivos. Índice parcial único
+  `(event_id,ordinal)` para destinos aceitos protege replays parciais concorrentes.
+- `telemetry_recovery_incidents` registra conteúdo ausente do Stream por origem,
+  grupo e ID, com primeiro/último registro, observações e eventual prova de evento
+  concluído. Sem essa prova não se confirma a PEL. Não há reconstrução automática.
+
+A origem BYTEA e rejeições/resultados originais continuam nas tabelas 017, sem
+coerção para JSONB nem sobrescrita. Quarentena conserva motivos e só atualiza estado
+OPEN/RESOLVED e resolved_at. Histórico e FK RESTRICT bloqueiam exclusão da origem.
+Não há expurgo automático dessas tabelas. Snapshot de referências continua
+compatível com readings particionada e materialized view existente; a 018 não
+recria nem altera leituras, MV, proprietários ou grants existentes.
+
+Além das permissões da 017, conceder ao usuário do tratamento SELECT/INSERT nas
+solicitações/resultados/incidentes, SELECT/INSERT/UPDATE nas tentativas,
+UPDATE nos incidentes e estado da quarentena, e USAGE/SELECT nas novas sequences.
+Os locks de cadastros exigem privilégios PostgreSQL apropriados (SELECT e UPDATE
+nas tabelas bloqueadas). Gerenciar papéis no ambiente; a migration não concede
+permissões a PUBLIC nem remove privilégios. O CI testa schema real, ambas as
+variantes de readings, reaplicação, constraints, preservação de dados/MV/grants
+existentes e migrations pós-pg_partman, sem skips.
