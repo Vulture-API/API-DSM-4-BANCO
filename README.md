@@ -22,6 +22,7 @@ migrations/
   014_one_pending_alert_per_rule.sql     # no máximo 1 alerta pendente por regra (fecha duplicados)
   015_role_permissions.sql               # catálogo e associações de permissões (SCRUM-432)
   016_occurrences.sql                    # ocorrências de falhas e limites dos sensores (SCRUM-395)
+  019_property_permissions.sql           # permissões de escrita de propriedades (SCRUM-399)
 benchmark/
   seed_readings.sql                      # massa sintética
   benchmark.sql                          # bateria de consultas com EXPLAIN ANALYZE
