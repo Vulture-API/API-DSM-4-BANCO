@@ -81,6 +81,8 @@ jobs:
           psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f migrations/017_telemetry_destinations_and_idempotency.sql
           psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f migrations/018_telemetry_recovery_and_replay.sql
           psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f migrations/018_telemetry_recovery_and_replay.sql
+          psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f migrations/019_property_permissions.sql
+          psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f migrations/019_property_permissions.sql
 
       - name: Checklist de aceite
         run: |

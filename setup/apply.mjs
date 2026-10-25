@@ -41,8 +41,9 @@ const files = [
   { nome: "telemetry", caminho: join(here, "../migrations/016_sensor_limits_and_reading_precision.sql") },
   { nome: "destinations", caminho: join(here, "../migrations/017_telemetry_destinations_and_idempotency.sql") },
   { nome: "recovery", caminho: join(here, "../migrations/018_telemetry_recovery_and_replay.sql") },
+  { nome: "properties", caminho: join(here, "../migrations/019_property_permissions.sql") },
   { nome: "seed", caminho: join(here, "seed-dev.sql") },
-].filter((f) => !only || f.nome === only || (only === "schema" && ["permissions", "telemetry", "occurrences", "destinations", "recovery"].includes(f.nome)));
+].filter((f) => !only || f.nome === only || (only === "schema" && ["permissions", "telemetry", "occurrences", "destinations", "recovery", "properties"].includes(f.nome)));
 
 const client = new pg.Client({
   connectionString: url,
