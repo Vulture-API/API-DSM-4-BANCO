@@ -256,3 +256,29 @@ BEGIN
     (SELECT count(*) FROM triggered_alerts);
 END
 $seed$;
+
+-- Permissões padrão dos cargos de demonstração --------------------------------
+-- A 015/016/019 só concedem permissões ao Administrador. Sem isto, Gerente
+-- Agrícola e Cliente entram e não enxergam nenhuma tela. Só concede a cargos
+-- ainda sem nenhuma permissão: não sobrescreve ajustes feitos pela equipe.
+INSERT INTO role_permissions (role_id, permission_code)
+SELECT r.id, p.code
+FROM roles r
+JOIN (VALUES
+  ('Gerente Agrícola', 'monitoring.read'), ('Gerente Agrícola', 'stations.read'),
+  ('Gerente Agrícola', 'sensors.read'), ('Gerente Agrícola', 'sensor-types.read'),
+  ('Gerente Agrícola', 'alert-configs.read'), ('Gerente Agrícola', 'alert-configs.create'),
+  ('Gerente Agrícola', 'alert-configs.update'), ('Gerente Agrícola', 'alert-configs.delete'),
+  ('Gerente Agrícola', 'triggered-alerts.read'), ('Gerente Agrícola', 'triggered-alerts.acknowledge'),
+  ('Gerente Agrícola', 'occurrences.read'), ('Gerente Agrícola', 'occurrences.resolve'),
+  ('Gerente Agrícola', 'properties.read'), ('Gerente Agrícola', 'properties.create'),
+  ('Gerente Agrícola', 'properties.update'), ('Gerente Agrícola', 'properties.delete'),
+  ('Gerente Agrícola', 'users.read'),
+  ('Cliente', 'monitoring.read'), ('Cliente', 'stations.read'), ('Cliente', 'sensors.read'),
+  ('Cliente', 'sensor-types.read'), ('Cliente', 'alert-configs.read'),
+  ('Cliente', 'triggered-alerts.read'), ('Cliente', 'occurrences.read'),
+  ('Cliente', 'properties.read')
+) AS g(cargo, code) ON g.cargo = r.name
+JOIN permissions p ON p.code = g.code
+WHERE NOT EXISTS (SELECT 1 FROM role_permissions rp WHERE rp.role_id = r.id)
+ON CONFLICT DO NOTHING;
