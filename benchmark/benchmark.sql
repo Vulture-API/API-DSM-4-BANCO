@@ -78,10 +78,14 @@ ORDER BY 1 DESC;
 
 \echo ''
 \echo '===== 5. Ingestão: INSERT em lote de 1000 leituras ====='
+-- SCRUM-451: isolate the sample so before/after runs cannot collide on the
+-- new (sensor_id,unix_time) key. EXPLAIN still executes the real INSERT.
+BEGIN;
 EXPLAIN (ANALYZE, BUFFERS, COSTS OFF)
 INSERT INTO readings (sensor_id, value, unix_time)
 SELECT (g % 10) + 1, 25.0, extract(epoch FROM now())::bigint + g
 FROM generate_series(1, 1000) g;
+ROLLBACK;
 
 \echo ''
 \echo '===== 6. Expurgo: apagar dados com mais de 1 ano ====='

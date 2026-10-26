@@ -20,6 +20,9 @@ migrations/
   012_partition_maintenance.sql          # criação e expurgo automático de partições
   013_restore_column_defaults.sql        # restaura os DEFAULT das colunas no Neon
   014_one_pending_alert_per_rule.sql     # no máximo 1 alerta pendente por regra (fecha duplicados)
+  015_role_permissions.sql               # catálogo e associações de permissões (SCRUM-432)
+  016_occurrences.sql                    # ocorrências de falhas e limites dos sensores (SCRUM-395)
+  019_property_permissions.sql           # permissões de escrita de propriedades (SCRUM-399)
 benchmark/
   seed_readings.sql                      # massa sintética
   benchmark.sql                          # bateria de consultas com EXPLAIN ANALYZE
@@ -59,3 +62,20 @@ docker run -d --name bench-postgres -e POSTGRES_PASSWORD=postgres -p 5440:5432 p
 ```
 
 Para aplicar em produção, siga o passo a passo da seção 5 de [`docs/otimizacoes.md`](docs/otimizacoes.md). **É uma migração com movimentação de dados — exige janela de manutenção e backup.**
+
+### Telemetria e precisão (SCRUM-448)
+
+A migration 016 adiciona limites opcionais nos sensores e amplia as leituras para
+NUMERIC sem escala fixa. Instruções, testes, manutenção e limitações das APIs em
+[setup/README.md](setup/README.md#scrum-448--limites-e-precisão-da-telemetria).
+A alteração preserva precisão no banco; não recupera histórico arredondado nem
+altera o contrato HTTP do BACKEND.
+
+### Recuperação e replay (SCRUM-530)
+
+A migration 018 acrescenta auditoria de solicitações/tentativas/resultados de
+replay e incidentes de conteúdo ausente no Stream. Preserva origens/rejeições,
+protege campos já aceitos e registra o corte legado para novos eventos.
+Setup aplica 018 antes do seed. Contrato, permissões e operação em
+[setup/README.md](setup/README.md#scrum-530--auditoria-de-recuperação-e-replay).
+A execução permanece optativa no tratamento; implantação continua na SCRUM-531.

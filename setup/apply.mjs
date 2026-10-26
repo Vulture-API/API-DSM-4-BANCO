@@ -1,7 +1,7 @@
 // Aplica os scripts SQL no banco, sem depender do psql instalado.
 //
-//   npm run db:setup          -> schema + seed
-//   npm run db:schema         -> só o schema
+//   npm run db:setup          -> schema + permissões + ocorrências + seed
+//   npm run db:schema         -> schema + permissões + ocorrências
 //   npm run db:seed           -> só o seed
 //
 // A URL vem de DATABASE_URL (.env deste diretório) ou do primeiro argumento.
@@ -36,8 +36,14 @@ if (!url) {
 
 const files = [
   { nome: "schema", caminho: join(here, "schema-neon.sql") },
+  { nome: "permissions", caminho: join(here, "../migrations/015_role_permissions.sql") },
+  { nome: "occurrences", caminho: join(here, "../migrations/016_occurrences.sql") },
+  { nome: "telemetry", caminho: join(here, "../migrations/016_sensor_limits_and_reading_precision.sql") },
+  { nome: "destinations", caminho: join(here, "../migrations/017_telemetry_destinations_and_idempotency.sql") },
+  { nome: "recovery", caminho: join(here, "../migrations/018_telemetry_recovery_and_replay.sql") },
+  { nome: "properties", caminho: join(here, "../migrations/019_property_permissions.sql") },
   { nome: "seed", caminho: join(here, "seed-dev.sql") },
-].filter((f) => !only || f.nome === only);
+].filter((f) => !only || f.nome === only || (only === "schema" && ["permissions", "telemetry", "occurrences", "destinations", "recovery", "properties"].includes(f.nome)));
 
 const client = new pg.Client({
   connectionString: url,
