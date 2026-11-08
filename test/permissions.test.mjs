@@ -23,7 +23,7 @@ test("SCRUM-432 migration and seed are repeatable without restoring revoked gran
     `);
     await client.query(migration);
     const catalog = await client.query("SELECT code FROM permissions ORDER BY code");
-    assert.equal(catalog.rowCount, 31);
+    assert.equal(catalog.rowCount, 32);
     assert.equal((await client.query("SELECT * FROM role_permissions WHERE role_id = 99")).rowCount, 31);
     assert.equal((await client.query("SELECT * FROM role_permissions WHERE role_id = 42")).rowCount, 0);
     await client.query("DELETE FROM role_permissions WHERE role_id = 99 AND permission_code = 'users.delete'");
