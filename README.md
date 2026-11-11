@@ -24,6 +24,7 @@ migrations/
   016_occurrences.sql                    # ocorrências de falhas e limites dos sensores (SCRUM-395)
   019_property_permissions.sql           # permissões de escrita de propriedades (SCRUM-399)
   020_station_collection_interval.sql    # frequência de coleta do datalogger por estação (SCRUM-587)
+  021_sensor_calibration.sql             # ganho e offset por sensor, offset no tipo (SCRUM-600)
 benchmark/
   seed_readings.sql                      # massa sintética
   benchmark.sql                          # bateria de consultas com EXPLAIN ANALYZE
