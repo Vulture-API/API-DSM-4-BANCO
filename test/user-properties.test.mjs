@@ -34,3 +34,37 @@ test("SCRUM-608: backfill único, PK, índice e cascatas dos vínculos", { skip:
     await client.end();
   }
 });
+
+
+test("SCRUM-608: atualiza demo antigo uma vez e preserva revogação ao reaplicar", { skip: !process.env.TEST_DATABASE_URL }, async () => {
+  const client = new pg.Client({ connectionString: process.env.TEST_DATABASE_URL });
+  const schema = `it_demo_links_${randomUUID().replaceAll("-", "")}`;
+  const read = path => readFileSync(new URL(path, import.meta.url), "utf8");
+  await client.connect();
+  try {
+    await client.query(`CREATE SCHEMA ${schema}; SET search_path TO ${schema}`);
+    for (const script of ["../setup/schema-neon.sql", "../migrations/015_role_permissions.sql", "../migrations/019_property_permissions.sql", "../setup/seed-dev.sql"])
+      await client.query(read(script));
+    const seed = read("../setup/seed-demo.sql");
+    // Mesmo SQL da massa antiga: ainda não existiam tabela nem bootstrap de vínculos.
+    await client.query(seed.split("-- SCRUM-608: inicialização única dos vínculos")[0]);
+    await client.query(migration);
+    const links = async () => (await client.query(`SELECT c.email, p.name FROM user_properties up
+      JOIN credentials c ON c.user_id=up.user_id JOIN properties p ON p.id=up.property_id
+      WHERE c.email IN ('carlos.mendes@agritech.dev','fernanda.costa@agritech.dev') ORDER BY c.email`)).rows;
+    assert.deepEqual(await links(), []);
+    await client.query(seed);
+    assert.deepEqual(await links(), [
+      { email: "carlos.mendes@agritech.dev", name: "Fazenda Santa Rita" },
+      { email: "fernanda.costa@agritech.dev", name: "Fazenda Boa Vista" },
+    ]);
+    await client.query("DELETE FROM user_properties WHERE user_id=(SELECT user_id FROM credentials WHERE email='carlos.mendes@agritech.dev')");
+    await client.query(seed);
+    assert.deepEqual(await links(), [{ email: "fernanda.costa@agritech.dev", name: "Fazenda Boa Vista" }]);
+    assert.equal((await client.query("SELECT * FROM processing_checkpoints WHERE key='demo_user_properties_v1'")).rowCount, 1);
+  } finally {
+    await client.query("ROLLBACK");
+    await client.query(`DROP SCHEMA ${schema} CASCADE`);
+    await client.end();
+  }
+});
