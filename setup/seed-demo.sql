@@ -76,6 +76,17 @@ BEGIN
   ) AS v(nome, local)
   WHERE NOT EXISTS (SELECT 1 FROM properties p WHERE p.name = v.nome);
 
+  -- SCRUM-608: contas de demonstração com escopos distintos.
+  INSERT INTO user_properties(user_id, property_id)
+  SELECT c.user_id, p.id
+  FROM (VALUES
+    ('carlos.mendes@agritech.dev', 'Fazenda Santa Rita'),
+    ('fernanda.costa@agritech.dev', 'Fazenda Boa Vista')
+  ) AS links(email, property_name)
+  JOIN credentials c ON c.email = links.email
+  JOIN properties p ON p.name = links.property_name
+  ON CONFLICT DO NOTHING;
+
   -- Tipos de sensor ----------------------------------------------------------
   UPDATE sensor_types SET unit_of_measure = '°C'
   WHERE name = 'Temperatura' AND unit_of_measure = 'C';
