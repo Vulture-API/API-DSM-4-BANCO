@@ -156,6 +156,8 @@ jobs:
           psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f migrations/019_property_permissions.sql
           psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f migrations/020_station_collection_interval.sql
           psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f migrations/020_station_collection_interval.sql
+          psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f migrations/021_sensor_calibration.sql
+          psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f migrations/021_sensor_calibration.sql
 
       - name: Checklist de aceite
         run: |
