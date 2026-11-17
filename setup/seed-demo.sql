@@ -10,7 +10,7 @@
 --   20 regras de alerta e os alertas disparados coerentes com as leituras.
 --
 -- NÃO rodar no Neon compartilhado: é volume de demonstração.
--- Idempotente: se as estações de demonstração já existem, não faz nada.
+-- Idempotente: preserva a massa existente; vínculos demo são inicializados uma única vez.
 -- Determinístico: setseed() fixa os números "aleatórios".
 -- =============================================================================
 
@@ -281,4 +281,25 @@ JOIN (VALUES
 ) AS g(cargo, code) ON g.cargo = r.name
 JOIN permissions p ON p.code = g.code
 WHERE NOT EXISTS (SELECT 1 FROM role_permissions rp WHERE rp.role_id = r.id)
+ON CONFLICT DO NOTHING;
+
+-- SCRUM-608: inicialização única dos vínculos, inclusive em demonstrações antigas.
+-- Fora do DO principal: o RETURN acima só evita recriar a massa de telemetria.
+-- O marcador é exclusivo do seed, não interfere nos cursores dos processadores.
+-- CTE e vínculos são uma única operação: falha não deixa a etapa marcada.
+WITH first_run AS (
+  INSERT INTO processing_checkpoints(key, value)
+  VALUES ('demo_user_properties_v1', '1')
+  ON CONFLICT (key) DO NOTHING
+  RETURNING key
+)
+INSERT INTO user_properties(user_id, property_id)
+SELECT c.user_id, p.id
+FROM (VALUES
+  ('carlos.mendes@agritech.dev', 'Fazenda Santa Rita'),
+  ('fernanda.costa@agritech.dev', 'Fazenda Boa Vista')
+) AS links(email, property_name)
+JOIN credentials c ON c.email = links.email
+JOIN properties p ON p.name = links.property_name
+CROSS JOIN first_run
 ON CONFLICT DO NOTHING;
