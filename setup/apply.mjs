@@ -46,6 +46,7 @@ const files = [
   { nome: "calibration", caminho: join(here, "../migrations/021_sensor_calibration.sql") },
   { nome: "user-properties", caminho: join(here, "../migrations/022_user_properties.sql") },
   { nome: "ignored-fields", caminho: join(here, "../migrations/023_telemetry_ignored_fields.sql") },
+  { nome: "type-limits", caminho: join(here, "../migrations/024_sensor_type_limits.sql") },
   { nome: "seed", caminho: join(here, "seed-dev.sql") },
 ].filter((f) => !only || f.nome === only || (only === "schema" && ["permissions", "telemetry", "occurrences", "destinations", "recovery", "properties", "collection", "calibration", "user-properties"].includes(f.nome)));
 
