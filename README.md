@@ -26,6 +26,7 @@ migrations/
   020_station_collection_interval.sql    # frequência de coleta do datalogger por estação (SCRUM-587)
   021_sensor_calibration.sql             # ganho e offset por sensor, offset no tipo (SCRUM-600)
   023_telemetry_ignored_fields.sql       # campo sem sensor cadastrado vira resultado 'ignored' (SCRUM-623)
+  024_sensor_type_limits.sql             # limites físicos por tipo de sensor (SCRUM-630)
 benchmark/
   seed_readings.sql                      # massa sintética
   benchmark.sql                          # bateria de consultas com EXPLAIN ANALYZE
