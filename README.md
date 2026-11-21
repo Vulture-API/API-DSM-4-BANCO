@@ -15,6 +15,7 @@ setup/
   seed-dev.sql                           # dados mínimos de desenvolvimento
   seed-demo.sql                          # dados de demonstração (NÃO rodar no Neon compartilhado)
 migrations/
+  manifest.txt                           # ordem das migrations 015+ (apply.mjs, CI e INFRA leem daqui)
   010_readings_partitioning.sql          # particionamento mensal de readings
   011_readings_indexes_and_tuning.sql    # índices, autovacuum, fillfactor, MV
   012_partition_maintenance.sql          # criação e expurgo automático de partições
@@ -22,9 +23,13 @@ migrations/
   014_one_pending_alert_per_rule.sql     # no máximo 1 alerta pendente por regra (fecha duplicados)
   015_role_permissions.sql               # catálogo e associações de permissões (SCRUM-432)
   016_occurrences.sql                    # ocorrências de falhas e limites dos sensores (SCRUM-395)
+  016_sensor_limits_and_reading_precision.sql
+  017_telemetry_destinations_and_idempotency.sql
+  018_telemetry_recovery_and_replay.sql
   019_property_permissions.sql           # permissões de escrita de propriedades (SCRUM-399)
   020_station_collection_interval.sql    # frequência de coleta do datalogger por estação (SCRUM-587)
   021_sensor_calibration.sql             # ganho e offset por sensor, offset no tipo (SCRUM-600)
+  022_user_properties.sql                # vínculo usuário x propriedade (SCRUM-608)
   023_telemetry_ignored_fields.sql       # campo sem sensor cadastrado vira resultado 'ignored' (SCRUM-623)
   024_sensor_type_limits.sql             # limites físicos por tipo de sensor (SCRUM-630)
 benchmark/

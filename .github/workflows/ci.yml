@@ -2,8 +2,10 @@
 # SCRUM-377 — Pipeline de Integração Contínua do banco (Equipe Vulture)
 #
 # Sobe um PostgreSQL 16 descartável com pg_partman e valida, a cada PR:
-#   schema + seed (idempotentes) -> migrations 010..013 -> checklist de aceite
-#   -> benchmark reduzido. Nada aqui toca o Neon.
+#   schema + migrations do manifesto + seed (duas vezes) -> particionamento
+#   010..013 com benchmark reduzido -> testes sem skip -> manifesto de novo
+#   sobre a tabela particionada (duas vezes) -> checklist de aceite.
+# Nada aqui toca o Neon.
 # ---------------------------------------------------------------------------
 name: CI
 
@@ -106,6 +108,8 @@ jobs:
     steps:
       - name: Checkout do repositório
         uses: actions/checkout@v5
+        with:
+          persist-credentials: false
 
       - name: Configurar Node.js
         uses: actions/setup-node@v5
@@ -146,22 +150,16 @@ jobs:
           set -o pipefail
           node --test --test-reporter=tap | tee /tmp/banco-tests.tap
           grep -Eq '^# skipped 0$' /tmp/banco-tests.tap
-          psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f migrations/016_sensor_limits_and_reading_precision.sql
-          psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f migrations/016_sensor_limits_and_reading_precision.sql
-          psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f migrations/017_telemetry_destinations_and_idempotency.sql
-          psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f migrations/017_telemetry_destinations_and_idempotency.sql
-          psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f migrations/018_telemetry_recovery_and_replay.sql
-          psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f migrations/018_telemetry_recovery_and_replay.sql
-          psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f migrations/019_property_permissions.sql
-          psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f migrations/019_property_permissions.sql
-          psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f migrations/020_station_collection_interval.sql
-          psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f migrations/020_station_collection_interval.sql
-          psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f migrations/021_sensor_calibration.sql
-          psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f migrations/021_sensor_calibration.sql
-          psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f migrations/023_telemetry_ignored_fields.sql
-          psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f migrations/023_telemetry_ignored_fields.sql
-          psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f migrations/024_sensor_type_limits.sql
-          psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f migrations/024_sensor_type_limits.sql
+
+      - name: Migrations do manifesto sobre a tabela particionada (duas vezes)
+        run: |
+          while read -r migration; do
+            case "$migration" in ''|'#'*) continue ;; esac
+            for _ in 1 2; do
+              psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f "migrations/${migration}.sql" < /dev/null
+            done
+            echo "ok ${migration}"
+          done < migrations/manifest.txt
 
       - name: Checklist de aceite
         run: |
