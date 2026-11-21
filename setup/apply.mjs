@@ -34,21 +34,17 @@ if (!url) {
   process.exit(1);
 }
 
+// Ordem única das migrations: migrations/manifest.txt (também usada pelo CI e pelo INFRA).
+const manifesto = readFileSync(join(here, "../migrations/manifest.txt"), "utf8")
+  .split("\n")
+  .map((linha) => linha.trim())
+  .filter((linha) => linha && !linha.startsWith("#"));
+
 const files = [
   { nome: "schema", caminho: join(here, "schema-neon.sql") },
-  { nome: "permissions", caminho: join(here, "../migrations/015_role_permissions.sql") },
-  { nome: "occurrences", caminho: join(here, "../migrations/016_occurrences.sql") },
-  { nome: "telemetry", caminho: join(here, "../migrations/016_sensor_limits_and_reading_precision.sql") },
-  { nome: "destinations", caminho: join(here, "../migrations/017_telemetry_destinations_and_idempotency.sql") },
-  { nome: "recovery", caminho: join(here, "../migrations/018_telemetry_recovery_and_replay.sql") },
-  { nome: "properties", caminho: join(here, "../migrations/019_property_permissions.sql") },
-  { nome: "collection", caminho: join(here, "../migrations/020_station_collection_interval.sql") },
-  { nome: "calibration", caminho: join(here, "../migrations/021_sensor_calibration.sql") },
-  { nome: "user-properties", caminho: join(here, "../migrations/022_user_properties.sql") },
-  { nome: "ignored-fields", caminho: join(here, "../migrations/023_telemetry_ignored_fields.sql") },
-  { nome: "type-limits", caminho: join(here, "../migrations/024_sensor_type_limits.sql") },
+  ...manifesto.map((nome) => ({ nome, caminho: join(here, `../migrations/${nome}.sql`) })),
   { nome: "seed", caminho: join(here, "seed-dev.sql") },
-].filter((f) => !only || f.nome === only || (only === "schema" && ["permissions", "telemetry", "occurrences", "destinations", "recovery", "properties", "collection", "calibration", "user-properties"].includes(f.nome)));
+].filter((f) => !only || (only === "seed" ? f.nome === "seed" : f.nome !== "seed"));
 
 const client = new pg.Client({
   connectionString: url,

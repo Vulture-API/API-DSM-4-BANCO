@@ -1,0 +1,16 @@
+# Migrations aplicadas depois de setup/schema-neon.sql, nesta ordem.
+# Todas são idempotentes: o CI aplica duas vezes. Migration nova entra no fim.
+# Lido por setup/apply.mjs, pelo CI deste repo e pelo API-DSM-4-INFRA
+# (scripts/check-components.py e conferência do docker-compose.test.yml).
+# 010..013 (particionamento) ficam fora: são aplicadas pelo benchmark/run.sh.
+015_role_permissions
+016_occurrences
+016_sensor_limits_and_reading_precision
+017_telemetry_destinations_and_idempotency
+018_telemetry_recovery_and_replay
+019_property_permissions
+020_station_collection_interval
+021_sensor_calibration
+022_user_properties
+023_telemetry_ignored_fields
+024_sensor_type_limits
